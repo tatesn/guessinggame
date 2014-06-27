@@ -1,0 +1,75 @@
+﻿@{
+    ViewBag.Title = "Guessing Game";
+    Layout = MVC.Shared.Views._Layout;
+}
+@section Javascript {
+    <script>
+        $(function () {
+            var gameHub = $.connection.guessingGameHub;
+
+            // Send Message Function
+            gameHub.client.sendMessage = function (message) {
+                // Add chat message
+                $('#chat').val($('#chat').val() + "\n" + message);
+            }
+
+            // Total Users Function
+            gameHub.client.updateTotalUsers = function (totalUsers) {
+                $('#numberOfUsers').text(totalUsers);
+            }
+
+            // Whether game can be played
+            gameHub.client.playGame = function () {
+                $('#submitGuess').data('canRun', true);
+                $('#registration').hide();
+                $('#gameArea').show();
+                $('#guess').removeAttr('disabled').focus();
+            }
+            
+            $.connection.hub.start().done(function () {
+                // Register
+                $('#register').click(function () {
+                    var username = $('#name').val();
+                    gameHub.server.register(username);
+                });
+                $('#name').keypress(function (e) {
+                    if (e.which == 13)
+                        $('#register').trigger('click');
+                });
+
+                // Guess
+                $('#submitGuess').click(function () {
+                    var $btn = $(this);
+
+                    if ($btn.is(':visible') && ($btn.data('canRun') || false) == true) {
+                        var $guess = $('#guess');
+                        var guessValue = parseInt($guess.val());
+                        gameHub.server.guess(guessValue);
+                        $guess.val('').focus();
+                    }
+                });
+                $('#guess').keypress(function (e) {
+                    if (e.which == 13)
+                        $('#submitGuess').trigger('click');
+                });
+            });
+        });
+    </script>
+}
+<div id="gameContainer">
+    <h1>Guessing Game</h1>
+    <textarea readonly="readonly" id="chat" rows="20"></textarea>
+    <div id="registration">
+        <input type="text" maxlength="100" id="name" placeholder="Enter Username"/>
+        <a href="#_" id="register">Register</a>
+    </div>
+    <div id="gameArea" style="display: none;">
+    <div>
+        <span id="numberOfUsers"></span> user(s) online.
+    </div>
+    <div>
+        <input type="number" id="guess" placeholder="Enter guess here" disabled="disabled" />
+        <a href="#_" id="submitGuess">Guess</a>
+    </div>
+    </div>
+</div>
